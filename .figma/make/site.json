@@ -1,0 +1,12 @@
+{
+  "title": "CivicSnap — Better shared spaces",
+  "language": "en",
+  "description": "Enables visitors to quickly report public facility issues with AI-assisted reports while staff track, assign, and resolve problems efficiently.",
+  "robots": {
+    "index": true
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
