@@ -1,5 +1,7 @@
 # CivicSnap
 
+**Live app:** [Open CivicSnap](https://civic-snap-campus-care-wwj53axen-prasanna-rvssl.vercel.app/)
+
 **Report campus problems with a photo or voice note. Help facilities teams respond and show progress.**
 
 CivicSnap is a mobile-first campus issue reporting app. A visitor captures or uploads a photo, adds a typed note or voice recording, reviews an AI-generated report draft, and receives a private tracking link. Campus staff can view submitted reports and move them through Received, Assigned, In progress, and Resolved.
