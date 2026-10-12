@@ -40,8 +40,16 @@ Staff can choose one of three demo profiles. These names are for the hackathon w
 
 Three AI-generated sample photos are included for exercising the required photo upload and AI draft flow. They are fictional and contain no real people:
 
-- `public/test-images/dirty-campus-hallway.png`
-- `public/test-images/overflowing-campus-bin.png`
-- `public/test-images/dirty-campus-bathroom.png`
+| Dirty campus hallway | Overflowing campus bin | Dirty campus bathroom |
+| --- | --- | --- |
+| ![Dirty campus hallway](public/test-images/dirty-campus-hallway.png) | ![Overflowing campus bin](public/test-images/overflowing-campus-bin.png) | ![Dirty campus bathroom](public/test-images/dirty-campus-bathroom.png) |
 
 Each file is below the app's 4 MB image upload limit. These are test assets, not evidence of real campus issues.
+
+## Team
+
+Add every team member's name here before submitting.
+
+## Hackathon notes
+
+This project folder began from a Figma-generated prototype. The application integration, server routes, schema, and setup documentation were added for the hackathon. Clearly disclose any additional code or assets your team uses. Do not commit API keys, passwords, or other secrets.
