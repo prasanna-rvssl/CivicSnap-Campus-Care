@@ -148,8 +148,11 @@ function DetailsScreen({ go, campus, location, setCampus, setLocation, onReady }
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
   const [captureError, setCaptureError] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -157,6 +160,7 @@ function DetailsScreen({ go, campus, location, setCampus, setLocation, onReady }
   const [note, setNote] = useState("");
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     if (photo) URL.revokeObjectURL(photo);
     if (voiceUrl) URL.revokeObjectURL(voiceUrl);
   }, [photo, voiceUrl]);
@@ -167,6 +171,53 @@ function DetailsScreen({ go, campus, location, setCampus, setLocation, onReady }
     setPhoto(URL.createObjectURL(file));
     setPhotoFile(file);
     setCaptureError("");
+  };
+  const stopCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    setCameraOpen(false);
+  };
+  const openCamera = async () => {
+    setCaptureError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCaptureError("Camera access is unavailable here. Use Upload photo to choose an image instead.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+    } catch {
+      setCaptureError("We couldn't open the camera. Allow camera access in your browser, or use Upload photo instead.");
+    }
+  };
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && cameraStreamRef.current) {
+      videoRef.current.srcObject = cameraStreamRef.current;
+      void videoRef.current.play().catch(() => undefined);
+    }
+  }, [cameraOpen]);
+  const captureCameraPhoto = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setCaptureError("The camera is still starting. Please try again in a moment.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCaptureError("We couldn't capture that photo. Please try again or use Upload photo.");
+        return;
+      }
+      pickPhoto(new File([blob], `civicsnap-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      stopCamera();
+    }, "image/jpeg", 0.9);
   };
   const startRecording = async () => {
     try {
@@ -202,7 +253,8 @@ function DetailsScreen({ go, campus, location, setCampus, setLocation, onReady }
         <p className="screen-subtitle">A photo is required so the campus team can understand the issue.</p>
         <input ref={cameraRef} className="visually-hidden-input" type="file" accept="image/*" capture="environment" onChange={(event) => pickPhoto(event.target.files?.[0])} />
         <input ref={imageRef} className="visually-hidden-input" type="file" accept="image/*" onChange={(event) => pickPhoto(event.target.files?.[0])} />
-        {photo ? <div className="photo-preview"><img src={photo} alt="Selected campus issue" /><div className="photo-badge"><Icon name="check" size={14} /> Photo added</div><button aria-label="Remove photo" onClick={() => { URL.revokeObjectURL(photo); setPhoto(null); setPhotoFile(null); }}><Icon name="trash" size={17} /></button></div> : <div className="photo-empty"><Icon name="camera" size={28} /><b>Add a photo <span>Required</span></b><p>Take a picture or choose one from your phone.</p><div className="button-row"><Button icon="camera" onClick={() => cameraRef.current?.click()}>Take photo</Button><Button variant="secondary" icon="file" onClick={() => imageRef.current?.click()}>Upload photo</Button></div></div>}
+        {photo ? <div className="photo-preview"><img src={photo} alt="Selected campus issue" /><div className="photo-badge"><Icon name="check" size={14} /> Photo added</div><button aria-label="Remove photo" onClick={() => { URL.revokeObjectURL(photo); setPhoto(null); setPhotoFile(null); }}><Icon name="trash" size={17} /></button></div> : <div className="photo-empty"><Icon name="camera" size={28} /><b>Add a photo <span>Required</span></b><p>Take a picture or choose one from your device.</p><div className="button-row"><Button icon="camera" onClick={openCamera}>Take photo</Button><Button variant="secondary" icon="file" onClick={() => imageRef.current?.click()}>Upload photo</Button></div></div>}
+        {cameraOpen && <div className="camera-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) stopCamera(); }}><section className="camera-dialog" role="dialog" aria-modal="true" aria-labelledby="camera-dialog-title"><div className="camera-dialog-heading"><h2 id="camera-dialog-title">Take a photo</h2><button type="button" aria-label="Close camera" onClick={stopCamera}>×</button></div><video ref={videoRef} className="camera-preview" autoPlay playsInline muted /><div className="camera-dialog-actions"><Button variant="secondary" onClick={() => { stopCamera(); cameraRef.current?.click(); }}>Use device camera</Button><Button icon="camera" onClick={captureCameraPhoto}>Capture photo</Button></div></section></div>}
         <div className="record-card">
           <button className={`record-button ${recording ? "is-recording" : ""}`} onClick={recording ? stopRecording : startRecording} aria-label={recording ? "Stop recording" : "Start voice recording"}><Icon name={recording ? "check" : "mic"} size={21} /></button>
           <div><b>{recording ? "Recording… tap to finish" : voiceUrl ? "Voice note ready" : "Record a voice message"}</b><span>{recording ? "Tap the button when you’re done" : voiceUrl ? "Tap record to replace your recording" : "Optional · recorded here in the app"}</span></div>
